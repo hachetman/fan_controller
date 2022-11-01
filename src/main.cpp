@@ -57,6 +57,7 @@ int config_time() {
 }
 
 void setup(void) {
+  uint32_t temperature;
   Serial.begin(115200);
   Serial.println("Fan Controller");
   setup_wifi();
@@ -95,34 +96,35 @@ void setup(void) {
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
+
     }
     if (client.connected()) {
         Serial.println("Connected to MQTT");
+        String hostname = "espressiv_" + WiFi.macAddress();
+        hostname.replace(":", "");
+        StaticJsonDocument<1024> doc;
+        doc["temperature"] = temperature;
+        doc["pwm"] =   emc2101.getDutyCycle();;
+        doc["rpm"] = emc2101.getFanRPM();;
+        doc["rssi"] = WiFi.RSSI();
+        char buffer[256];
+        serializeJson(doc, buffer);
+        Serial.println(buffer);
+        String topic = "tele/" + hostname + "/" + mqtt_info_topic;
+        Serial.println(topic);
+        client.publish(topic.c_str(), buffer);
+        espClient.flush();
+      delay(500);
     }
     client.disconnect();
     espClient.flush();
 
   }
+  ESP.deepSleep(600e6);
 }
 
 
+
 void loop() {
-  struct tm timeinfo;
-  if (!getLocalTime(&timeinfo)) {
-    Serial.println("Failed to obtain time");
-  }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S\n");
-  Serial.print("Internal Temperature: ");
-  Serial.print("Internal Temperature: ");
-  Serial.print(emc2101.getInternalTemperature());
-  Serial.println(" degrees C");
 
-  Serial.print("Duty Cycle: ");
-  Serial.print(emc2101.getDutyCycle());
-  Serial.print("% / Fan RPM: ");
-  Serial.print(emc2101.getFanRPM());
-  Serial.println(" RPM");
-  Serial.println("");
-
-  delay(5000);
 }
