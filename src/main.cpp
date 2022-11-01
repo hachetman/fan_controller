@@ -87,6 +87,24 @@ void setup(void) {
   emc2101.enableTachInput(true);
   emc2101.setPWMDivisor(0);
   emc2101.setDutyCycle(50);
+
+  temperature = emc2101.getInternalTemperature();
+  if (temperature < 30) {
+    emc2101.setDutyCycle(20);
+  } else if (temperature < 40) {
+    emc2101.setDutyCycle(40);
+  } else {
+    emc2101.setDutyCycle(60);
+    }
+  Serial.print("Internal Temperature: ");
+  Serial.print(emc2101.getInternalTemperature());
+  Serial.println(" degrees C");
+
+  Serial.print("Duty Cycle: ");
+  Serial.print(emc2101.getDutyCycle());
+  Serial.print("% / Fan RPM: ");
+  Serial.print(emc2101.getFanRPM());
+  Serial.println(" RPM");
   if (setup_wifi() == 0) {
     // client.setCallback(callback);
     Serial.print("Attempting MQTT connection...");
