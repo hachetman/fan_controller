@@ -10,6 +10,8 @@ WiFiClient espClient;
 
 IPAddress server(mqtt_server_ip);
 PubSubClient client(server, 1883, espClient);
+const char *ntpServer = "pool.ntp.org";
+
 int setup_wifi() {
   int timeout = 0;
   String hostname = "espressiv_" + WiFi.macAddress();
@@ -41,12 +43,24 @@ int setup_wifi() {
     Serial.println("WiFi not connected");
     return -1;
   }
+
+}
+
+int config_time() {
+  configTzTime("CET-1CEST,M3.5.0,M10.5.0/3", ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+    return -1;
+  }
+  return 0;
 }
 
 void setup(void) {
   Serial.begin(115200);
   Serial.println("Fan Controller");
-
+  setup_wifi();
+  config_time();
   // Try to initialize!
   if (!emc2101.begin()) {
     Serial.println("Failed to find EMC2101 chip");
@@ -93,10 +107,12 @@ void setup(void) {
 
 
 void loop() {
-  Serial.print("External Temperature: ");
-  Serial.print(emc2101.getExternalTemperature());
-  Serial.println(" degrees C");
-
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo)) {
+    Serial.println("Failed to obtain time");
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S\n");
+  Serial.print("Internal Temperature: ");
   Serial.print("Internal Temperature: ");
   Serial.print(emc2101.getInternalTemperature());
   Serial.println(" degrees C");
